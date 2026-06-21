@@ -47,7 +47,7 @@ export function Sidebar() {
       </nav>
       
       <div className="mt-auto p-4 bg-muted/30 rounded-lg text-xs text-muted-foreground text-center">
-        Powered by DeepSeek V3 & ChromaDB
+        Powered by DeepSeek V4 Flash & ChromaDB
       </div>
     </div>
   );
