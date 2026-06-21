@@ -2,6 +2,27 @@
 
 A production-grade, local-first Retrieval-Augmented Generation (RAG) Document Intelligence System designed for advanced document analysis. Built using a robust Python (FastAPI) backend and a sleek, modern Next.js 16 (React) frontend styled with Tailwind CSS v4 and animated using Framer Motion.
 
+
+## UI Preview & Demo
+
+Here is a visual walk-through of the system interface:
+
+### 1. Document Library (`/`)
+A clean drag-and-drop workspace for uploading and indexing files (supporting PDF, DOCX, TXT) with automatic text extraction, chunking, and dual-indexing.
+![Document Library](assets/document_library.png)
+
+### 2. Query Engine (`/chat`)
+A real-time search interface displaying multi-query expansion, inline source citations, and query response validation checks.
+![Query Engine Chat](assets/chat_interface.png)
+
+### 3. System Analytics (`/analytics`)
+Tracks total documents, average confidence scores, total queries executed, and displays interactive historical audit logs.
+![System Analytics Dashboard](assets/analytics_dashboard.png)
+
+### 4. Query Execution Report
+Clicking any query in the analytics logs opens a rich, glassmorphic performance execution report displaying the exact question, generated answer, and source document citation text alongside the execution speed breakdown of the RAG pipeline.
+![Query Execution Report](assets/query_report_modal.png)
+
 ---
 
 ## Key Features & Architecture
