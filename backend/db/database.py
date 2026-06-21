@@ -41,9 +41,20 @@ def init_db():
             question TEXT NOT NULL,
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             confidence_score INTEGER NOT NULL,
-            doc_count INTEGER NOT NULL
+            doc_count INTEGER NOT NULL,
+            answer TEXT,
+            citations TEXT,
+            timing TEXT
         )
         ''')
+
+        # Run database migration to add new columns if table already exists
+        for col, col_type in [("answer", "TEXT"), ("citations", "TEXT"), ("timing", "TEXT")]:
+            try:
+                cursor.execute(f"ALTER TABLE queries ADD COLUMN {col} {col_type}")
+            except sqlite3.OperationalError:
+                # Column already exists, safe to ignore
+                pass
         
         # QueryDocuments Table
         # Join table to track which documents were referenced in which queries

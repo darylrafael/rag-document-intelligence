@@ -53,7 +53,15 @@ async def execute_query(req: QueryRequest):
         # 5. Record Query in DB
         query_id = str(uuid.uuid4())
         referenced_doc_ids = [c.doc_id for c in gen_result.citations]
-        record_query(query_id, req.question, confidence_score, referenced_doc_ids)
+        record_query(
+            query_id=query_id,
+            question=req.question,
+            confidence_score=confidence_score,
+            referenced_doc_ids=referenced_doc_ids,
+            answer=gen_result.answer,
+            citations=gen_result.citations,
+            timing=timing
+        )
         
         return QueryResponse(
             answer=gen_result.answer,

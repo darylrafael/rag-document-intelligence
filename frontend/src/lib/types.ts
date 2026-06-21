@@ -39,6 +39,9 @@ export interface QueryHistoryItem {
     confidence_score: number;
     timestamp: string;
     referenced_doc_ids: string[];
+    answer?: string;
+    citations?: Citation[];
+    timing?: PipelineTiming;
 }
 
 export interface QueryHistoryResponse {

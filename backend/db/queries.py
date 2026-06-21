@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import sqlite3
+import json
 from backend.db.database import get_db_connection
 from backend.models.schemas import DocumentResponse, QueryHistoryItem, DocumentQueryCount, AnalyticsStatsResponse
 
@@ -49,14 +50,25 @@ def delete_document_record(doc_id: str):
     finally:
         conn.close()
 
-def record_query(query_id: str, question: str, confidence_score: int, referenced_doc_ids: List[str]):
+def record_query(
+    query_id: str,
+    question: str,
+    confidence_score: int,
+    referenced_doc_ids: List[str],
+    answer: Optional[str] = None,
+    citations: Optional[List[Any]] = None,
+    timing: Optional[Any] = None
+):
     conn = get_db_connection()
     try:
+        citations_json = json.dumps([c.model_dump() for c in citations]) if citations is not None else None
+        timing_json = timing.model_dump_json() if timing is not None else None
+        
         # Insert the query
         conn.execute('''
-            INSERT INTO queries (id, question, confidence_score, doc_count)
-            VALUES (?, ?, ?, ?)
-        ''', (query_id, question, confidence_score, len(set(referenced_doc_ids))))
+            INSERT INTO queries (id, question, confidence_score, doc_count, answer, citations, timing)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (query_id, question, confidence_score, len(set(referenced_doc_ids)), answer, citations_json, timing_json))
         
         # Insert document references for analytics
         for doc_id in set(referenced_doc_ids):
@@ -74,13 +86,22 @@ def get_query_history(page: int = 1, size: int = 20) -> List[QueryHistoryItem]:
     try:
         offset = (page - 1) * size
         cursor = conn.execute('''
-            SELECT id as query_id, question, timestamp, confidence_score, doc_count 
+            SELECT id as query_id, question, timestamp, confidence_score, doc_count, answer, citations, timing 
             FROM queries 
             ORDER BY timestamp DESC 
             LIMIT ? OFFSET ?
         ''', (size, offset))
         rows = cursor.fetchall()
-        return [QueryHistoryItem(**parse_row_dates(dict(row))) for row in rows]
+        
+        items = []
+        for row in rows:
+            d = dict(row)
+            if d.get("citations"):
+                d["citations"] = json.loads(d["citations"])
+            if d.get("timing"):
+                d["timing"] = json.loads(d["timing"])
+            items.append(QueryHistoryItem(**parse_row_dates(d)))
+        return items
     finally:
         conn.close()
 

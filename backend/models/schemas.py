@@ -98,6 +98,9 @@ class QueryHistoryItem(BaseModel):
     timestamp: datetime
     confidence_score: int
     doc_count: int
+    answer: Optional[str] = None
+    citations: Optional[List[Citation]] = None
+    timing: Optional[PipelineTiming] = None
 
 class QueryHistoryResponse(BaseModel):
     model_config = ConfigDict(strict=True)

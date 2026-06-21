@@ -1,15 +1,17 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { AnalyticsStatsResponse, QueryHistoryResponse } from '../../lib/types';
-import { BarChart, Activity, FileText, Target, Clock } from 'lucide-react';
+import { AnalyticsStatsResponse, QueryHistoryResponse, QueryHistoryItem } from '../../lib/types';
+import { BarChart, Activity, FileText, Target, Clock, X, AlertTriangle, Calendar, Award } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '../../lib/utils';
+import { CitationCard } from '../../components/CitationCard';
 
 export default function Analytics() {
   const [stats, setStats] = useState<AnalyticsStatsResponse | null>(null);
   const [history, setHistory] = useState<QueryHistoryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedQuery, setSelectedQuery] = useState<QueryHistoryItem | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -28,6 +30,16 @@ export default function Analytics() {
     }
     loadData();
   }, []);
+
+  const renderContent = (text: string) => {
+    const parts = text.split(/(\[SOURCE_\d+\])/g);
+    return parts.map((part, i) => {
+      if (part.match(/\[SOURCE_\d+\]/)) {
+        return <span key={i} className="text-primary font-bold">{part}</span>;
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
 
   if (isLoading) {
     return <div className="p-8 max-w-6xl mx-auto animate-pulse flex space-x-4">Loading analytics...</div>;
@@ -89,7 +101,11 @@ export default function Analytics() {
               </thead>
               <tbody className="divide-y divide-border">
                 {history.items.map((item) => (
-                  <tr key={item.query_id} className="hover:bg-muted/30 transition-colors">
+                  <tr 
+                    key={item.query_id} 
+                    onClick={() => setSelectedQuery(item)}
+                    className="hover:bg-muted/30 transition-colors cursor-pointer"
+                  >
                     <td className="px-6 py-4 text-foreground font-medium">{item.question}</td>
                     <td className="px-6 py-4">
                       <span className={cn(
@@ -116,6 +132,109 @@ export default function Analytics() {
           </div>
         )}
       </div>
+
+      {/* Query Detail Modal */}
+      {selectedQuery && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity animate-in fade-in duration-200"
+          onClick={() => setSelectedQuery(null)}
+        >
+          <div 
+            className="bg-card border border-border w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl p-6 shadow-2xl relative flex flex-col text-foreground animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-border/80 mb-5">
+              <div>
+                <h2 className="text-xl font-bold">Query Execution Report</h2>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-xs text-muted-foreground">
+                  <div className="flex items-center space-x-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>{new Date(selectedQuery.timestamp).toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Award className="w-3.5 h-3.5 text-primary" />
+                    <span>Confidence Score: {selectedQuery.confidence_score}%</span>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedQuery(null)}
+                className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Question */}
+            <div className="mb-5">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Question</h3>
+              <div className="p-4 bg-muted/20 border border-border/80 rounded-xl font-semibold text-foreground">
+                "{selectedQuery.question}"
+              </div>
+            </div>
+
+            {/* Answer */}
+            {selectedQuery.answer ? (
+              <div className="mb-6">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Answer</h3>
+                <div className="p-5 bg-card border border-border/80 rounded-xl leading-relaxed whitespace-pre-wrap text-sm text-foreground">
+                  {renderContent(selectedQuery.answer)}
+                </div>
+              </div>
+            ) : (
+              <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 rounded-xl text-sm flex items-start space-x-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>This query log doesn't contain generated answer details. (Only new queries after update will show answers).</span>
+              </div>
+            )}
+
+            {/* Citations / Sources */}
+            {selectedQuery.citations && selectedQuery.citations.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Sources Cited</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {selectedQuery.citations.map((cit, idx) => (
+                    <CitationCard key={cit.chunk_id || idx} citation={cit} index={idx} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pipeline Timing Breakdown */}
+            {selectedQuery.timing && (
+              <div>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Performance Breakdown</h3>
+                <div className="space-y-3.5 bg-muted/20 border border-border/80 rounded-xl p-5">
+                  {[
+                    { name: 'Query Expansion', val: selectedQuery.timing.expansion_ms, color: 'bg-purple-500' },
+                    { name: 'Document Retrieval', val: selectedQuery.timing.retrieval_ms, color: 'bg-blue-500' },
+                    { name: 'Cross-Reranking', val: selectedQuery.timing.reranking_ms, color: 'bg-amber-500' },
+                    { name: 'LLM Generation', val: selectedQuery.timing.generation_ms, color: 'bg-rose-500' },
+                  ].map((metric) => {
+                    const pct = selectedQuery.timing!.total_ms > 0 ? (metric.val / selectedQuery.timing!.total_ms) * 100 : 0;
+                    return (
+                      <div key={metric.name} className="space-y-1.5">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-medium text-foreground">{metric.name}</span>
+                          <span className="text-muted-foreground font-mono">{metric.val.toFixed(1)} ms ({pct.toFixed(0)}%)</span>
+                        </div>
+                        <div className="w-full bg-muted/50 rounded-full h-1.5 overflow-hidden">
+                          <div className={cn("h-full rounded-full animate-pulse", metric.color)} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="pt-2 border-t border-border flex justify-between items-center text-xs font-semibold">
+                    <span className="text-foreground">Total Execution Time</span>
+                    <span className="text-primary font-mono text-sm">{selectedQuery.timing.total_ms.toFixed(1)} ms</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
