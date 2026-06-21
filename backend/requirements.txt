@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pydantic
+chromadb
+sentence-transformers
+pdfplumber
+python-docx
+tiktoken
+rank_bm25
+openai
+python-dotenv
+pytest
+nltk
+aiofiles
+python-multipart
