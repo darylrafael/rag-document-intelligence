@@ -11,7 +11,7 @@ This application employs a high-performance hybrid retrieval pipeline utilizing 
 *   **Hybrid Search**: Combines semantic search (vector embeddings via `sentence-transformers/all-MiniLM-L6-v2` in ChromaDB) and keyword search (BM25 lexical scoring) to achieve highly relevant candidate selection.
 *   **Reciprocal Rank Fusion (RRF)**: Merges keyword and vector search results using RRF ($k=60$) to balance the strengths of semantic context and precise keyword matching.
 *   **Cross-Encoder Reranking**: Re-evaluates the top 20 candidates retrieved by RRF using a local Cross-Encoder model (`cross-encoder/ms-marco-MiniLM-L-6-v2`), narrowing them down to the top 5 most critical context chunks.
-*   **DeepSeek V4 via OpenRouter**: Orchestrates advanced multi-query expansion (phrasing 2 alternative queries) and contextual generation using the DeepSeek model.
+*   **DeepSeek V3 via OpenRouter**: Orchestrates advanced multi-query expansion (phrasing 2 alternative queries) and contextual generation using the DeepSeek model.
 *   **Citations & Groundedness Verification**: 
     *   Generates inline citations matching actual retrieved source indices (e.g., `[SOURCE_1]`).
     *   A validator analyzes the model output, filters citations down to the source tags actually cited, and computes a dynamic confidence score (ranging from 10 to 95+) depending on citation completeness, fallback usage, and source matching.
@@ -54,13 +54,13 @@ When a user asks a question, it flows through expansion → hybrid search → re
 
 ```mermaid
 flowchart LR
-    Q["❓ User\nQuestion"] --> EX["🔀 Query\nExpansion\nDeepSeek V4"]
+    Q["❓ User\nQuestion"] --> EX["🔀 Query\nExpansion\nDeepSeek V3"]
     EX --> S1["🧠 Semantic\nSearch\nChromaDB"]
     EX --> S2["📊 Keyword\nSearch\nBM25"]
     S1 --> RRF["⚡ Reciprocal\nRank Fusion\nk=60"]
     S2 --> RRF
     RRF --> RR["🎯 Cross-Encoder\nReranking\nTop 20 → Top 5"]
-    RR --> GEN["💬 Generation\nDeepSeek V4\nContextual Answer"]
+    RR --> GEN["💬 Generation\nDeepSeek V3\nContextual Answer"]
     GEN --> VAL["✅ Validation\nGroundedness\nConfidence Score"]
     VAL --> OUT["📋 Response\nAnswer + Cited\nSources"]
 

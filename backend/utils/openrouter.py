@@ -14,8 +14,7 @@ if not OPENROUTER_API_KEY:
     logger.warning("OPENROUTER_API_KEY is not set in the environment.")
 
 # We use the official OpenAI SDK but pointed to OpenRouter
-# DeepSeek V4 Flash equivalent in OpenRouter is typically "deepseek/deepseek-chat" or similar.
-# For standard V4 it's "deepseek/deepseek-chat". We'll use a configurable model.
+# The default model "deepseek/deepseek-chat" resolves to DeepSeek V3 on OpenRouter.
 MODEL_NAME = os.environ.get("LLM_MODEL", "deepseek/deepseek-chat")
 
 # Initialize the AsyncOpenAI client
