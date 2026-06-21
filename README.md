@@ -25,33 +25,54 @@ This application employs a high-performance hybrid retrieval pipeline utilizing 
 
 ## Workflow Architecture
 
-The system operates via two core pipelines: **Ingestion** and **Query & Retrieval**:
+### Ingestion Pipeline
+
+When a document is uploaded, it flows through extraction → chunking → dual indexing:
 
 ```mermaid
-graph TD
-    %% Ingestion Pipeline
-    subgraph Ingestion["1. Ingestion Pipeline"]
-        Upload[File Upload: PDF / DOCX / TXT] --> Extract[Text Extraction: pdfplumber / python-docx]
-        Extract --> Chunk[NLTK Sentence Tokenizer & Chunker]
-        Chunk --> Embed[Sentence-Transformers Embeddings]
-        Embed --> IndexChroma[ChromaDB Vector Index]
-        Chunk --> IndexBM25[BM25 Lexical Index]
-        IndexChroma --> SQLite[SQLite Document Metadata Store]
-        IndexBM25 --> SQLite
-    end
+flowchart LR
+    A["📄 Upload\n(PDF / DOCX / TXT)"] --> B["🔍 Extract Text\npdfplumber\npython-docx"]
+    B --> C["✂️ Chunk\nNLTK Sentence\nTokenizer"]
+    C --> D["🧠 Embed\nall-MiniLM-L6-v2"]
+    C --> F["📊 BM25\nLexical Index"]
+    D --> E["🗄️ ChromaDB\nVector Store"]
+    E --> G["💾 SQLite\nMetadata"]
+    F --> G
 
-    %% Query Pipeline
-    subgraph QueryPipeline["2. Query & Retrieval Pipeline"]
-        UserQuery[User Question] --> Expand[Query Expansion: DeepSeek V4]
-        Expand --> VectorSearch[Semantic Search: ChromaDB]
-        Expand --> KeywordSearch[Lexical Search: BM25]
-        VectorSearch --> RRF[Reciprocal Rank Fusion - RRF]
-        KeywordSearch --> RRF
-        RRF --> Rerank[Cross-Encoder Reranking]
-        Rerank --> LLM[Generation: DeepSeek V4 Context Answer]
-        LLM --> Validate[Groundedness & Confidence Scoring]
-        Validate --> Response[Final Answer + Highlighted Citations]
-    end
+    style A fill:#4f46e5,stroke:#3730a3,color:#fff
+    style B fill:#7c3aed,stroke:#6d28d9,color:#fff
+    style C fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    style D fill:#2563eb,stroke:#1d4ed8,color:#fff
+    style E fill:#0891b2,stroke:#0e7490,color:#fff
+    style F fill:#0891b2,stroke:#0e7490,color:#fff
+    style G fill:#059669,stroke:#047857,color:#fff
+```
+
+### Query & Retrieval Pipeline
+
+When a user asks a question, it flows through expansion → hybrid search → reranking → generation:
+
+```mermaid
+flowchart LR
+    Q["❓ User\nQuestion"] --> EX["🔀 Query\nExpansion\nDeepSeek V4"]
+    EX --> S1["🧠 Semantic\nSearch\nChromaDB"]
+    EX --> S2["📊 Keyword\nSearch\nBM25"]
+    S1 --> RRF["⚡ Reciprocal\nRank Fusion\nk=60"]
+    S2 --> RRF
+    RRF --> RR["🎯 Cross-Encoder\nReranking\nTop 20 → Top 5"]
+    RR --> GEN["💬 Generation\nDeepSeek V4\nContextual Answer"]
+    GEN --> VAL["✅ Validation\nGroundedness\nConfidence Score"]
+    VAL --> OUT["📋 Response\nAnswer + Cited\nSources"]
+
+    style Q fill:#4f46e5,stroke:#3730a3,color:#fff
+    style EX fill:#7c3aed,stroke:#6d28d9,color:#fff
+    style S1 fill:#2563eb,stroke:#1d4ed8,color:#fff
+    style S2 fill:#2563eb,stroke:#1d4ed8,color:#fff
+    style RRF fill:#d97706,stroke:#b45309,color:#fff
+    style RR fill:#dc2626,stroke:#b91c1c,color:#fff
+    style GEN fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    style VAL fill:#059669,stroke:#047857,color:#fff
+    style OUT fill:#059669,stroke:#047857,color:#fff
 ```
 
 ---
