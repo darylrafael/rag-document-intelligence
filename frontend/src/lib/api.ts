@@ -1,6 +1,8 @@
 import { DocumentResponse, QueryResponse, QueryHistoryResponse, AnalyticsStatsResponse } from './types';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+// On Windows, 'localhost' can resolve to IPv6 (::1) while uvicorn listens on IPv4 (127.0.0.1).
+// Using '127.0.0.1' directly prevents 'Failed to fetch' connection errors.
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 export const api = {
     documents: {
